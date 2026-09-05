@@ -152,8 +152,22 @@
     font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;padding:8px 20px;cursor:pointer;
     transition:.15s;
   }
+  .payout .btns{display:flex;gap:8px;justify-content:center;margin-top:14px}
+  .payout .btns button{margin-top:0}
+  .payout .printbtn{
+    background:transparent;color:var(--ink);border:1px solid var(--ink);
+    font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;
+    padding:8px 16px;cursor:pointer;transition:.15s;
+  }
+  .payout .printbtn:hover{background:var(--ink);border-color:var(--ink);color:var(--paper-3)}
   .payout .copy:hover{background:var(--rust)}
   .payout .copy.ok{background:var(--green)}
+
+  .tax{border-top:1.5px dashed var(--line);padding:16px 26px 4px}
+  .tax .tax-cap{font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3);margin-bottom:6px}
+  .tax .r{padding:6px 0;font-size:11.5px}
+
+  .print-only{display:none}
 
   .ledger{min-width:0;animation:fadeup .7s .32s cubic-bezier(.2,.7,.2,1) both}
   .ledger .bar{
@@ -206,6 +220,45 @@
     .aside{position:static}
     .hero{padding-top:36px}
   }
+
+  @media print{
+    @page{size:A4;margin:16mm 15mm}
+    :root{--paper:#fff;--paper-2:#f2f0ea;--paper-3:#fff;--ink:#16130d;--ink-3:#6f6758;--line:rgba(0,0,0,.25);--line-soft:rgba(0,0,0,.12);--shadow:none}
+    body{background:#fff;padding:0;font-size:12px;color:#111}
+    .noise,.topbar,.hero,.drop,.ledger .bar,.notes,.copy{display:none !important}
+    .layout{display:block;max-width:none}
+    .aside{position:static;display:block}
+    .receipt{box-shadow:none;margin:0;background:#fff;page-break-inside:avoid}
+    .receipt::before{display:none}
+    .receipt .head{display:none}
+    .print-only{display:block !important}
+    .ldg{padding:8px 0 0}
+    .receipt .r{padding:6px 0;font-size:12px}
+    .payout{border-top:2px solid #111;margin-top:16px;padding:16px 0 0;text-align:center;page-break-inside:avoid}
+    .payout .cap{font-size:9px;letter-spacing:.16em}
+    .payout .num{font-size:30px;margin:6px 0 2px}
+    .payout .cap2{font-size:9.5px}
+    .payout .btns{display:none}
+    .tax{border-top:1px solid var(--line);padding:14px 0 0}
+    .pt-head{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;border-bottom:2px solid #111;padding-bottom:10px;margin-bottom:18px;page-break-inside:avoid}
+    .pt-brand{font-family:var(--serif);font-style:italic;font-weight:700;font-size:26px;color:var(--rust)}
+    .pt-title{font-family:var(--serif);font-weight:600;font-size:17px;margin-top:1px}
+    .pt-meta{font-size:9px;color:var(--ink-3);text-align:right;letter-spacing:.05em;line-height:1.7}
+    .pt-meta b{color:var(--ink);font-weight:600}
+    .pt-sign{margin-top:22px;page-break-inside:avoid}
+    .pt-note{font-size:8.5px;color:var(--ink-3);border-top:1px solid var(--line);padding-top:8px;margin-bottom:16px}
+    .pt-sign-row{display:flex;gap:38px;max-width:480px}
+    .pt-sign-line{flex:1;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink)}
+    .pt-sign-line span{display:block;margin-top:28px;border-top:1px solid #111;font-size:8px;letter-spacing:.04em;text-transform:none;color:var(--ink-3);text-align:center;padding-top:4px}
+    .ledger{display:block}
+    .pt-table{font-family:var(--serif);font-style:italic;font-size:13px;color:var(--ink-2);border-bottom:1px solid var(--line);padding-bottom:8px;margin-bottom:10px}
+    .pt-table b{font-style:normal;font-family:var(--mono);color:var(--rust)}
+    .tblwrap{max-height:none;overflow:visible;border:none;box-shadow:none;background:#fff;page-break-before:always;page-break-inside:auto}
+    .tblwrap table{page-break-inside:auto}
+    thead th{position:static;background:#f2f0ea}
+    tbody tr{page-break-inside:avoid}
+    .empty{display:none}
+  }
 </style>
 </head>
 <body>
@@ -239,6 +292,13 @@
     </div>
 
     <section class="receipt">
+      <div class="print-only pt-head">
+        <div>
+          <div class="pt-brand">VGen</div>
+          <div class="pt-title">Rozliczenie umowy o dzieło</div>
+        </div>
+        <div class="pt-meta">Raport: <b id="ptMeta">—</b><br>wydruk z dnia <span id="ptDate">—</span></div>
+      </div>
       <div class="head">
         <div>
           <div class="t">Rozliczenie</div>
@@ -256,7 +316,23 @@
         <div class="cap">Kwota do wypłaty dla wykonawcy</div>
         <div class="num" id="vPayout">0,00 zł</div>
         <div class="cap2">Total received − marża spółki brutto</div>
-        <button class="copy" id="copyBtn" type="button">Kopiuj kwotę</button>
+        <div class="btns">
+          <button class="copy" id="copyBtn" type="button">Kopiuj kwotę</button>
+          <button class="printbtn" id="printBtn" type="button">Drukuj / PDF</button>
+        </div>
+      </div>
+      <div class="tax">
+        <div class="tax-cap">Podatek do urzędu skarbowego</div>
+        <div class="r"><div class="l">Podstawa opodatkowania · 50% kwoty <span></span></div><div class="v" id="vTaxBase">—</div></div>
+        <div class="r sub"><div class="l">Podatek dochodowy 12% <span></span></div><div class="v" id="vTax">—</div></div>
+        <div class="r strong"><div class="l">Do wypłaty po odliczeniu podatku <span></span></div><div class="v" id="vTaxNet">—</div></div>
+      </div>
+      <div class="print-only pt-sign">
+        <div class="pt-note">Marża spółki: 10,00 zł netto + 23% VAT = 12,30 zł brutto za każdy zrealizowany rysunek. Kwota do wypłaty dla wykonawcy = suma „Total received” − marża spółki brutto. Podatek wykonawcy: 50% kwoty stanowi podstawę opodatkowania, od niej 12%, reszta po odliczeniu podatku trafia do wypłaty.</div>
+        <div class="pt-sign-row">
+          <div class="pt-sign-line">Wykonawca<span>data i podpis</span></div>
+          <div class="pt-sign-line">Spółka<span>data i podpis</span></div>
+        </div>
       </div>
     </section>
   </aside>
@@ -266,6 +342,7 @@
       <h2>Transakcje <i>z raportu</i></h2>
       <span class="cnt"><b id="rowCount">0</b>&nbsp;pozycji · tylko PLN</span>
     </div>
+    <div class="print-only pt-table">Transakcje z raportu · <b id="ptTableCount">—</b></div>
     <div class="tblwrap">
       <table>
         <colgroup>
@@ -297,6 +374,7 @@
 <footer class="notes">
   <div class="eq">do wypłaty = <b>suma „Total received”</b> − <b>marża brutto</b> (rysunki × 12,30&nbsp;zł)</div>
   <div>Marża spółki: 10,00 zł netto · VAT 23% = 2,30 zł · razem 12,30 zł brutto za każdy zrealizowany rysunek.</div>
+  <div>Podatek wykonawcy: podstawa = 50% kwoty do wypłaty, od podstawy 12% do urzędu skarbowego.</div>
 </footer>
 
 <script>
@@ -365,18 +443,6 @@
     return -1;
   }
 
-  function animateNum(el, to, fmt) {
-    if (el._raf) cancelAnimationFrame(el._raf);
-    var from = 0, t0 = performance.now();
-    function step(t) {
-      var p = Math.min((t - t0) / 750, 1);
-      var e = 1 - Math.pow(1 - p, 3);
-      el.textContent = fmt(from + (to - from) * e);
-      if (p < 1) el._raf = requestAnimationFrame(step);
-    }
-    el._raf = requestAnimationFrame(step);
-  }
-
   function report(err) {
     $("err").innerHTML = "<b>Nie udało się przetworzyć pliku</b>" + err;
     drop.classList.add("bad");
@@ -404,21 +470,29 @@
     var marginVat = Math.round(items * MARGIN_NET * MARGIN_VAT_RATE * 100) / 100;
     var marginCross = Math.round(items * MARGIN_BRUTTO * 100) / 100;
     var payout = Math.round((total - marginCross) * 100) / 100;
+    var taxBase = Math.round(payout * 0.5 * 100) / 100;
+    var taxAmount = Math.round(taxBase * 0.12 * 100) / 100;
+    var taxNet = Math.round((payout - taxAmount) * 100) / 100;
 
     $("tbody").innerHTML = rowsHtml;
     $("rowCount").textContent = rows.length;
 
     $("receiptSrc").textContent = lastFileName || "raport VGen";
+    $("ptMeta").textContent = lastFileName + " · " + rows.length + " transakcji";
+    $("ptTableCount").textContent = rows.length + " · suma " + plnFull.format(total);
+    $("ptDate").textContent = new Intl.DateTimeFormat("pl-PL", { day: "2-digit", month: "long", year: "numeric" }).format(new Date());
     $("vTotal").textContent = plnFull.format(total);
     $("vItems").textContent = items + " szt.";
     $("vNet").textContent = plnFull.format(marginNet);
     $("vVat").textContent = plnFull.format(marginVat);
     $("vGross").textContent = plnFull.format(marginCross);
+    $("vTaxBase").textContent = plnFull.format(taxBase);
+    $("vTax").textContent = plnFull.format(taxAmount);
+    $("vTaxNet").textContent = plnFull.format(taxNet);
 
     var el = $("vPayout");
-    animateNum(el, payout, function (x) { return plnFull.format(x); });
-    el.classList.remove("filled"); void el.offsetWidth; el.classList.add("filled");
     el.textContent = plnFull.format(payout);
+    el.classList.remove("filled"); void el.offsetWidth; el.classList.add("filled");
   }
 
   function handleFile(file) {
@@ -475,8 +549,20 @@
     drop.classList.remove("has");
     $("err").style.display = "none";
     $("receiptSrc").textContent = "czekam na plik…";
+    $("ptMeta").textContent = $("ptTableCount").textContent = "—";
     $("vTotal").textContent = $("vItems").textContent = $("vNet").textContent = $("vVat").textContent = $("vGross").textContent = "—";
+    $("vTaxBase").textContent = $("vTax").textContent = $("vTaxNet").textContent = "—";
     $("vPayout").textContent = "0,00 zł";
+  });
+
+  var printBtn = $("printBtn");
+  printBtn.addEventListener("click", function () {
+    if (!lastFileName) {
+      $("err").innerHTML = "<b>Brak raportu</b>Załaduj najpierw plik CSV, aby wydrukować rozliczenie.";
+      $("err").style.display = "block";
+      return;
+    }
+    window.print();
   });
 
   copyBtn.addEventListener("click", function () {
