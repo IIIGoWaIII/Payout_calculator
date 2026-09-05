@@ -1,0 +1,503 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kalkulator wypłat VGen · umowa o dzieło</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,300..900&family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#f0e8d7;
+    --paper-2:#e8dcc4;
+    --paper-3:#f8f2e4;
+    --ink:#221c12;
+    --ink-2:#4b4233;
+    --ink-3:#7c715c;
+    --rust:#bd4b26;
+    --rust-deep:#922f15;
+    --gold:#a6894a;
+    --green:#2e6e4c;
+    --line:rgba(34,28,18,.17);
+    --line-soft:rgba(34,28,18,.10);
+    --shadow:0 1px 0 rgba(34,28,18,.06), 0 18px 40px -22px rgba(34,28,18,.35);
+    --serif:"Fraunces",Georgia,"Times New Roman",serif;
+    --mono:"IBM Plex Mono","Courier New",monospace;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{scrollbar-color:var(--gold) transparent}
+  body{
+    background:
+      radial-gradient(1100px 480px at 85% -6%, rgba(189,75,38,.10), transparent 60%),
+      radial-gradient(900px 520px at -8% 30%, rgba(166,137,74,.14), transparent 55%),
+      repeating-linear-gradient(90deg, transparent 0 95px, rgba(34,28,18,.024) 95px 96px),
+      repeating-linear-gradient(0deg, transparent 0 95px, rgba(34,28,18,.024) 95px 96px),
+      var(--paper);
+    color:var(--ink);
+    font-family:var(--mono);
+    font-size:14px;
+    line-height:1.5;
+    min-height:100vh;
+    padding:0 clamp(16px,4vw,56px) 64px;
+    -webkit-font-smoothing:antialiased;
+  }
+  .noise{
+    position:fixed;inset:0;pointer-events:none;z-index:50;opacity:.05;mix-blend-mode:multiply;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  .topbar{
+    display:flex;align-items:baseline;justify-content:space-between;gap:16px;flex-wrap:wrap;
+    padding:26px 0 18px;border-bottom:1px solid var(--line);
+    animation:fadeup .7s cubic-bezier(.2,.7,.2,1) both;
+  }
+  .brand{font-family:var(--serif);font-weight:700;font-size:20px;letter-spacing:.02em}
+  .brand span{color:var(--rust);font-style:italic}
+  .brand small{display:block;font-family:var(--mono);font-weight:400;font-size:10.5px;letter-spacing:.22em;text-transform:uppercase;color:var(--ink-3);margin-top:2px}
+  .badge{
+    font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--rust);
+    border:1.5px solid var(--rust);outline:1px solid var(--rust);outline-offset:3px;
+    padding:5px 12px;transform:rotate(-1.5deg);
+  }
+
+  .hero{max-width:1180px;margin:0 auto;padding:56px 0 36px;display:flex;gap:32px;justify-content:space-between;align-items:flex-end;flex-wrap:wrap}
+  .hero h1{
+    font-family:var(--serif);font-weight:540;font-size:clamp(34px,5.4vw,58px);line-height:1.04;
+    letter-spacing:-.015em;max-width:16ch;
+    animation:fadeup .7s .08s cubic-bezier(.2,.7,.2,1) both;
+  }
+  .hero h1 em{font-style:italic;color:var(--rust)}
+  .hero p{
+    margin-top:16px;color:var(--ink-2);font-size:13.5px;max-width:60ch;line-height:1.65;
+    animation:fadeup .7s .16s cubic-bezier(.2,.7,.2,1) both;
+  }
+  .hero p b{color:var(--ink);font-weight:600}
+
+  .layout{max-width:1180px;margin:0 auto;display:grid;grid-template-columns:390px minmax(0,1fr);gap:28px;align-items:start}
+  .aside{position:sticky;top:20px;display:flex;flex-direction:column;gap:22px;animation:fadeup .7s .24s cubic-bezier(.2,.7,.2,1) both}
+
+  .drop{
+    position:relative;background:var(--paper-3);border:1.5px dashed var(--ink-3);
+    padding:26px 22px;text-align:center;cursor:pointer;transition:.18s ease;
+  }
+  .drop:hover,.drop.drag{border-color:var(--rust);background:#fbf5e8;box-shadow:var(--shadow)}
+  .drop.drag{transform:scale(1.015)}
+  .drop .icon{font-family:var(--serif);font-style:italic;font-size:34px;color:var(--rust);line-height:1}
+  .drop .t1{margin-top:10px;font-family:var(--serif);font-weight:600;font-size:17px}
+  .drop .t2{font-size:11.5px;color:var(--ink-3);margin-top:6px}
+  .drop .t2 code{color:var(--ink-2)}
+  .drop input{display:none}
+  .drop .file{
+    display:none;margin-top:12px;border-top:1px dashed var(--line);padding-top:12px;
+    font-size:11px;color:var(--ink-2);word-break:break-all;
+  }
+  .drop.has .ic, .drop.has .t1, .drop.has .t2{display:none}
+  .drop.has .file{display:block;animation:fadeup .4s both}
+  .drop.has{text-align:left;padding:16px 18px}
+  .drop.has .file b{display:block;font-weight:600;color:var(--ink);margin-bottom:2px}
+  .drop.has .file button{
+    margin-top:8px;background:none;border:1px solid var(--line);color:var(--rust);
+    font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;
+    padding:4px 10px;cursor:pointer;transition:.15s;
+  }
+  .drop.has .file button:hover{background:var(--rust);border-color:var(--rust);color:var(--paper-3)}
+  .drop .err{display:none;margin-top:10px;color:var(--rust-deep);font-size:11.5px;line-height:1.55;text-align:left}
+  .drop .err b{display:block;font-weight:600}
+  .drop.bad{animation:shake .3s}
+  .drop.bad:hover,.drop.bad.drag{background:rgba(189,75,38,.07)}
+
+  .receipt{
+    position:relative;background:var(--paper-3);border:1px solid var(--line);
+    box-shadow:var(--shadow);
+  }
+  .receipt::before{
+    content:"";position:absolute;top:-1px;left:18px;right:18px;height:9px;
+    background:
+      radial-gradient(circle at 4.5px 0, var(--paper) 0 3.5px, transparent 4.5px),
+      radial-gradient(circle at 10px 0, var(--paper) 0 3.5px, transparent 4.5px);
+    background-size:18px 9px;
+  }
+  .receipt .head{
+    border-bottom:1px solid var(--line);padding:26px 26px 16px;
+    display:flex;justify-content:space-between;align-items:flex-start;gap:12px;
+  }
+  .receipt .head .t{font-family:var(--serif);font-style:italic;font-weight:500;font-size:15px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2)}
+  .receipt .head .src{font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3);margin-top:3px;word-break:break-all}
+  .receipt .ldg{padding:8px 26px 0}
+  .receipt .r{
+    display:flex;justify-content:space-between;align-items:baseline;gap:14px;
+    padding:7px 0;font-size:12px;color:var(--ink-2);
+  }
+  .receipt .r .l{display:flex;flex:1;align-items:baseline;gap:6px}
+  .receipt .r .l span{flex:1;border-bottom:1px dotted var(--line-soft);transform:translateY(-3px)}
+  .receipt .r .v{font-weight:500;color:var(--ink);white-space:nowrap}
+  .receipt .r.sub{padding-left:14px;font-size:11px;color:var(--ink-3)}
+  .receipt .r.sub .v{color:var(--ink-2);font-weight:400}
+  .receipt .r.gap{border-top:1px solid var(--line);margin-top:8px;padding-top:12px}
+  .receipt .r.big{padding:12px 0 4px}
+  .receipt .r.big .l{color:var(--ink);font-weight:500;letter-spacing:.08em;text-transform:uppercase;font-size:11px}
+  .receipt .r.strong .v{color:var(--rust-deep);font-weight:600}
+
+  .payout{border-top:2px solid var(--ink);margin-top:8px;padding:18px 26px 24px;text-align:center}
+  .payout .cap{font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-3)}
+  .payout .num{
+    font-family:var(--serif);font-weight:640;font-size:clamp(34px,3.2vw,44px);line-height:1.1;
+    letter-spacing:-.01em;margin:6px 0 2px;font-variant-numeric:tabular-nums;
+  }
+  .payout .num.filled{animation:pop .5s cubic-bezier(.2,1.4,.3,1) both}
+  .payout .cap2{font-size:10.5px;color:var(--ink-2)}
+  .payout .copy{
+    margin-top:14px;background:var(--ink);border:0;color:var(--paper-3);font-family:var(--mono);
+    font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;padding:8px 20px;cursor:pointer;
+    transition:.15s;
+  }
+  .payout .copy:hover{background:var(--rust)}
+  .payout .copy.ok{background:var(--green)}
+
+  .ledger{min-width:0;animation:fadeup .7s .32s cubic-bezier(.2,.7,.2,1) both}
+  .ledger .bar{
+    display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap;
+    padding-bottom:12px;border-bottom:1px solid var(--line);
+  }
+  .ledger .bar h2{font-family:var(--serif);font-weight:600;font-size:22px}
+  .ledger .bar h2 i{font-style:italic;color:var(--rust)}
+  .ledger .bar .cnt{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3)}
+  .ledger .bar .cnt b{color:var(--rust);font-weight:600}
+
+  .tblwrap{max-height:640px;overflow:auto;border-left:1px solid var(--line);border-right:1px solid var(--line);border-bottom:1px solid var(--line);background:var(--paper-3);box-shadow:var(--shadow)}
+  table{width:100%;table-layout:fixed;border-collapse:collapse;font-size:12px}
+  col.c-date{width:12%}
+  col.c-id{width:16%}
+  col.c-client{width:15%}
+  col.c-svc{width:31%}
+  col.c-qty{width:7%}
+  col.c-amt{width:19%}
+  thead th{
+    position:sticky;top:0;z-index:2;background:var(--paper-2);
+    text-align:left;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);
+    font-weight:500;padding:10px;border-bottom:1.5px solid var(--line);
+  }
+  tbody td{padding:9px 10px;border-bottom:1px solid var(--line-soft);vertical-align:top}
+  tbody tr{transition:background .12s}
+  tbody tr:nth-child(even){background:rgba(34,28,18,.025)}
+  tbody tr:hover{background:rgba(189,75,38,.06)}
+  td.id{font-size:11px;word-break:break-all}
+  td.date{white-space:nowrap;color:var(--ink-2)}
+  td.client{font-weight:500;word-break:break-all}
+  td.svc{font-family:var(--serif);font-style:italic;font-size:12.5px;line-height:1.4;color:var(--ink-2);word-break:break-word}
+  td.qty{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+  td.qty b{background:var(--paper-2);border:1px solid var(--line);padding:1px 7px;font-weight:600;white-space:nowrap}
+  td.amt{text-align:right;font-weight:600;white-space:nowrap;font-variant-numeric:tabular-nums;color:var(--ink)}
+  td.amt small{display:block;font-weight:400;font-size:9px;color:var(--ink-3);letter-spacing:.08em}
+  .empty{padding:40px;text-align:center;color:var(--ink-3);font-size:12px}
+  .empty i{display:block;font-style:normal;font-size:26px;margin-bottom:10px;opacity:.6}
+
+  .notes{max-width:1180px;margin:34px auto 0;display:flex;gap:26px;flex-wrap:wrap;justify-content:space-between;border-top:1px solid var(--line);padding-top:20px;font-size:11px;color:var(--ink-3)}
+  .notes .eq{font-family:var(--serif);font-style:italic;font-size:13px;color:var(--ink-2)}
+  .notes .eq b{font-style:normal;font-weight:600;color:var(--rust-deep)}
+
+  @keyframes fadeup{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+  @keyframes pop{0%{transform:scale(.92)}100%{transform:scale(1)}}
+  @keyframes shake{20%{transform:translateX(-6px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)}}
+
+  @media (max-width:900px){
+    .layout{grid-template-columns:1fr}
+    .aside{position:static}
+    .hero{padding-top:36px}
+  }
+</style>
+</head>
+<body>
+<div class="noise"></div>
+
+<header class="topbar">
+  <div class="brand">VGen<small>kalkulator wypłat · rozliczenie prac</small></div>
+  <div class="badge">Umowa o dzieło</div>
+</header>
+
+<section class="hero">
+  <div>
+    <h1>Kalkulator <em>wypłat</em> z raportu VGen</h1>
+    <p>Załaduj raport sprzedaży <b>CSV</b> pobrany z VGen. Od przychodów odliczamy marżę spółki — <b>10&nbsp;zł netto +&nbsp;23% VAT</b> (12,30&nbsp;zł brutto) za każdy zrealizowany rysunek — i pokazujemy kwotę do wypłaty dla wykonawcy.</p>
+  </div>
+</section>
+
+<main class="layout">
+  <aside class="aside">
+    <div class="drop" id="drop">
+      <div class="icon">⌁</div>
+      <div class="t1">Przeciągnij raport sprzedaży VGen (.csv)</div>
+      <div class="t2">…albo <span style="color:var(--rust)">kliknij, aby wybrać plik</span><br>oczekiwane kolumny: <code>Total received</code> · <code>Number of items</code></div>
+      <div class="file" id="fileInfo">
+        <b id="fileName"></b>
+        <span id="fileMeta"></span>
+        <br><button id="resetBtn" type="button">załaduj inny plik</button>
+      </div>
+      <div class="err" id="err"></div>
+      <input type="file" id="file" accept=".csv,text/csv,application/vnd.ms-excel">
+    </div>
+
+    <section class="receipt">
+      <div class="head">
+        <div>
+          <div class="t">Rozliczenie</div>
+          <div class="src" id="receiptSrc">czekam na plik…</div>
+        </div>
+      </div>
+      <div class="ldg">
+        <div class="r"><div class="l">Suma przychodów <span></span></div><div class="v" id="vTotal">—</div></div>
+        <div class="r"><div class="l">Zrealizowane rysunki <span></span></div><div class="v" id="vItems">—</div></div>
+        <div class="r gap"><div class="l">Marża spółki · netto <span></span></div><div class="v" id="vNet">—</div></div>
+        <div class="r sub"><div class="l">VAT 23% <span></span></div><div class="v" id="vVat">—</div></div>
+        <div class="r strong"><div class="l">Marża spółki · brutto <span></span></div><div class="v" id="vGross">—</div></div>
+      </div>
+      <div class="payout">
+        <div class="cap">Kwota do wypłaty dla wykonawcy</div>
+        <div class="num" id="vPayout">0,00 zł</div>
+        <div class="cap2">Total received − marża spółki brutto</div>
+        <button class="copy" id="copyBtn" type="button">Kopiuj kwotę</button>
+      </div>
+    </section>
+  </aside>
+
+  <section class="ledger">
+    <div class="bar">
+      <h2>Transakcje <i>z raportu</i></h2>
+      <span class="cnt"><b id="rowCount">0</b>&nbsp;pozycji · tylko PLN</span>
+    </div>
+    <div class="tblwrap">
+      <table>
+        <colgroup>
+          <col class="c-date">
+          <col class="c-id">
+          <col class="c-client">
+          <col class="c-svc">
+          <col class="c-qty">
+          <col class="c-amt">
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Data</th>
+            <th>Faktura</th>
+            <th>Klient</th>
+            <th>Usługa / produkt</th>
+            <th style="text-align:right">Szt.</th>
+            <th style="text-align:right">Total received</th>
+          </tr>
+        </thead>
+        <tbody id="tbody">
+          <tr><td colspan="6"><div class="empty"><i>⌁</i>Brak danych — załaduj plik CSV, aby zobaczyć transakcje.</div></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+</main>
+
+<footer class="notes">
+  <div class="eq">do wypłaty = <b>suma „Total received”</b> − <b>marża brutto</b> (rysunki × 12,30&nbsp;zł)</div>
+  <div>Marża spółki: 10,00 zł netto · VAT 23% = 2,30 zł · razem 12,30 zł brutto za każdy zrealizowany rysunek.</div>
+</footer>
+
+<script>
+(function () {
+  "use strict";
+
+  var MARGIN_NET = 10.0;
+  var MARGIN_VAT_RATE = 0.23;
+  var MARGIN_BRUTTO = MARGIN_NET * (1 + MARGIN_VAT_RATE); // 12,30
+
+  var MONTHS = { "Jan":"sty", "Feb":"lut", "Mar":"mar", "Apr":"kwi", "May":"maj", "Jun":"cze",
+                 "Jul":"lip", "Aug":"sie", "Sep":"wrz", "Oct":"paź", "Nov":"lis", "Dec":"gru" };
+
+  var pln = new Intl.NumberFormat("pl-PL", { style: "currency", currency: "PLN" });
+  var plnFull = new Intl.NumberFormat("pl-PL", { style: "currency", currency: "PLN", maximumFractionDigits: 2 });
+
+  var $ = function (id) { return document.getElementById(id); };
+  var drop = $("drop"), fileInput = $("file"), resetBtn = $("resetBtn"), copyBtn = $("copyBtn");
+  var lastFileName = "";
+
+  function toNum(v) {
+    var s = String(v == null ? "" : v).trim().replace(/\s/g, "").replace(",", ".");
+    var n = parseFloat(s);
+    return isFinite(n) ? n : 0;
+  }
+  function money(v) { return Math.round(toNum(v) * 100) / 100; }
+
+  function fmtDate(s) {
+    var m = /([A-Za-z]{3})\s+(\d{1,2}),?\s*(\d{4})/.exec(String(s || ""));
+    if (!m) return String(s || "");
+    return m[2].padStart(2, "0") + " " + (MONTHS[m[1]] || m[1]) + " " + m[3];
+  }
+
+  function parseCSV(text) {
+    var rows = [], row = [], field = "", inQ = false;
+    for (var i = 0; i < text.length; i++) {
+      var c = text[i];
+      if (inQ) {
+        if (c === '"') {
+          if (text[i + 1] === '"') { field += '"'; i++; } else { inQ = false; }
+        } else field += c;
+      } else if (c === '"') inQ = true;
+      else if (c === ",") { row.push(field); field = ""; }
+      else if (c === "\n" || c === "\r") {
+        if (c === "\r" && text[i + 1] === "\n") i++;
+        row.push(field); field = "";
+        if (row.join("").trim() !== "") rows.push(row);
+        row = [];
+      } else field += c;
+    }
+    row.push(field);
+    if (row.join("").trim() !== "") rows.push(row);
+    return rows;
+  }
+
+  function indexOfCol(header, names) {
+    var map = {};
+    header.forEach(function (h, i) { map[("" + h).trim().toLowerCase()] = i; });
+    for (var k = 0; k < names.length; k++) {
+      var found = map[names[k]];
+      if (found != null) return found;
+      for (var key in map) {
+        if (key.indexOf(names[k]) !== -1) return map[key];
+      }
+    }
+    return -1;
+  }
+
+  function animateNum(el, to, fmt) {
+    if (el._raf) cancelAnimationFrame(el._raf);
+    var from = 0, t0 = performance.now();
+    function step(t) {
+      var p = Math.min((t - t0) / 750, 1);
+      var e = 1 - Math.pow(1 - p, 3);
+      el.textContent = fmt(from + (to - from) * e);
+      if (p < 1) el._raf = requestAnimationFrame(step);
+    }
+    el._raf = requestAnimationFrame(step);
+  }
+
+  function report(err) {
+    $("err").innerHTML = "<b>Nie udało się przetworzyć pliku</b>" + err;
+    drop.classList.add("bad");
+    setTimeout(function () { drop.classList.remove("bad"); }, 400);
+  }
+
+  function render(rows, cols) {
+    var total = 0, items = 0;
+    var rowsHtml = "";
+    rows.forEach(function (r) {
+      var amt = money(r[cols.total]);
+      var qty = Math.round(toNum(r[cols.items]));
+      total += amt; items += qty;
+      rowsHtml += "<tr>"
+        + "<td class='date'>" + fmtDate(r[cols.date]) + "</td>"
+        + "<td class='id'>" + (r[cols.inv] || "—") + "</td>"
+        + "<td class='client'>" + (r[cols.client] || "—") + "</td>"
+        + "<td class='svc'>" + (r[cols.svc] || "—") + "</td>"
+        + "<td class='qty'><b>" + qty + "</b></td>"
+        + "<td class='amt'>" + pln.format(amt) + "<small>" + (r[cols.cur] || "PLN") + "</small></td>"
+        + "</tr>";
+    });
+
+    var marginNet = Math.round(items * MARGIN_NET * 100) / 100;
+    var marginVat = Math.round(items * MARGIN_NET * MARGIN_VAT_RATE * 100) / 100;
+    var marginCross = Math.round(items * MARGIN_BRUTTO * 100) / 100;
+    var payout = Math.round((total - marginCross) * 100) / 100;
+
+    $("tbody").innerHTML = rowsHtml;
+    $("rowCount").textContent = rows.length;
+
+    $("receiptSrc").textContent = lastFileName || "raport VGen";
+    $("vTotal").textContent = plnFull.format(total);
+    $("vItems").textContent = items + " szt.";
+    $("vNet").textContent = plnFull.format(marginNet);
+    $("vVat").textContent = plnFull.format(marginVat);
+    $("vGross").textContent = plnFull.format(marginCross);
+
+    var el = $("vPayout");
+    animateNum(el, payout, function (x) { return plnFull.format(x); });
+    el.classList.remove("filled"); void el.offsetWidth; el.classList.add("filled");
+    el.textContent = plnFull.format(payout);
+  }
+
+  function handleFile(file) {
+    $("err").style.display = "none"; $("err").innerHTML = "";
+    if (!file) return;
+    if (!/\.csv$/i.test(file.name)) { report("Plik musi mieć rozszerzenie <code>.csv</code>."); return; }
+    var reader = new FileReader();
+    reader.onerror = function () { report("Nie udało się odczytać pliku."); };
+    reader.onload = function () {
+      try {
+        var rows = parseCSV(String(reader.result));
+        if (rows.length < 2) { report("Plik nie zawiera żadnych rekordów."); return; }
+        var header = rows[0];
+        var cols = {
+          total: indexOfCol(header, ["total received", "total", "received"]),
+          items: indexOfCol(header, ["number of items", "items", "quantity", "qty"]),
+          date:  indexOfCol(header, ["invoice date", "date"]),
+          inv:   indexOfCol(header, ["invoice id", "invoice identifier", "invoice", "order#"]),
+          client:indexOfCol(header, ["client name", "business name", "client"]),
+          svc:   indexOfCol(header, ["services/products sold", "services", "product", "description"]),
+          cur:   indexOfCol(header, ["currency"])
+        };
+        if (cols.total === -1) { report("Nie znaleziono kolumny <b>„Total received”</b>."); return; }
+        if (cols.items === -1) { report("Nie znaleziono kolumny <b>„Number of items”</b>."); return; }
+        var data = rows.slice(1);
+        lastFileName = file.name;
+        drop.classList.add("has");
+        $("fileName").textContent = file.name;
+        $("fileMeta").textContent = (data.length) + " transakcji · przeliczono w PLN";
+        render(data, cols);
+      } catch (e) {
+        report("Błąd podczas analizy pliku: " + (e && e.message ? e.message : e));
+      }
+    };
+    reader.readAsText(file);
+  }
+
+  fileInput.addEventListener("change", function () { handleFile(fileInput.files[0]); });
+
+  ["dragenter", "dragover"].forEach(function (ev) {
+    drop.addEventListener(ev, function (e) { e.preventDefault(); drop.classList.add("drag"); });
+  });
+  ["dragleave", "drop"].forEach(function (ev) {
+    drop.addEventListener(ev, function (e) { e.preventDefault(); drop.classList.remove("drag"); });
+  });
+  drop.addEventListener("drop", function (e) {
+    var f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+    if (f) handleFile(f);
+  });
+  drop.addEventListener("click", function () { fileInput.click(); });
+  resetBtn.addEventListener("click", function (e) {
+    e.stopPropagation();
+    fileInput.value = "";
+    drop.classList.remove("has");
+    $("err").style.display = "none";
+    $("receiptSrc").textContent = "czekam na plik…";
+    $("vTotal").textContent = $("vItems").textContent = $("vNet").textContent = $("vVat").textContent = $("vGross").textContent = "—";
+    $("vPayout").textContent = "0,00 zł";
+  });
+
+  copyBtn.addEventListener("click", function () {
+    var v = $("vPayout").textContent;
+    var fn = function () {
+      copyBtn.textContent = "Skopiowano ✓";
+      copyBtn.classList.add("ok");
+      setTimeout(function () { copyBtn.textContent = "Kopiuj kwotę"; copyBtn.classList.remove("ok"); }, 1600);
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(v).then(fn, function () { fallbackCopy(v, fn); });
+    } else fallbackCopy(v, fn);
+  });
+  function fallbackCopy(text, done) {
+    var ta = document.createElement("textarea");
+    ta.value = text; ta.style.position = "fixed"; ta.style.opacity = "0";
+    document.body.appendChild(ta); ta.select();
+    try { document.execCommand("copy"); done(); } catch (e) {}
+    document.body.removeChild(ta);
+  }
+})();
+</script>
+</body>
+</html>
