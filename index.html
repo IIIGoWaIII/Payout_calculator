@@ -152,7 +152,7 @@
     font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;padding:8px 20px;cursor:pointer;
     transition:.15s;
   }
-  .payout .btns{display:flex;gap:8px;justify-content:center;margin-top:14px}
+  .payout .btns{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:14px}
   .payout .btns button{margin-top:0}
   .payout .printbtn{
     background:transparent;color:var(--ink);border:1px solid var(--ink);
@@ -160,6 +160,13 @@
     padding:8px 16px;cursor:pointer;transition:.15s;
   }
   .payout .printbtn:hover{background:var(--ink);border-color:var(--ink);color:var(--paper-3)}
+  .payout .contractbtn{
+    background:var(--rust);color:var(--paper-3);border:1px solid var(--rust);
+    font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;
+    padding:8px 16px;cursor:pointer;transition:.15s;
+  }
+  .payout .contractbtn:hover{background:var(--rust-deep);border-color:var(--rust-deep)}
+  .payout .contractbtn:disabled{opacity:.45;cursor:not-allowed}
   .payout .copy:hover{background:var(--rust)}
   .payout .copy.ok{background:var(--green)}
 
@@ -317,6 +324,7 @@
         <div class="num" id="vPayout">0,00 zł</div>
         <div class="cap2">Total received − marża spółki brutto</div>
         <div class="btns">
+          <button class="contractbtn" id="contractBtn" type="button">Pobierz umowę (PDF)</button>
           <button class="copy" id="copyBtn" type="button">Kopiuj kwotę</button>
           <button class="printbtn" id="printBtn" type="button">Drukuj / PDF</button>
         </div>
@@ -377,6 +385,8 @@
   <div>Podatek wykonawcy: podstawa = 50% kwoty do wypłaty, od podstawy 12% do urzędu skarbowego.</div>
 </footer>
 
+<script src="vendor/jspdf.umd.min.js"></script>
+<script src="contract.js"></script>
 <script>
 (function () {
   "use strict";
@@ -393,7 +403,65 @@
 
   var $ = function (id) { return document.getElementById(id); };
   var drop = $("drop"), fileInput = $("file"), resetBtn = $("resetBtn"), copyBtn = $("copyBtn");
+  var contractBtn = $("contractBtn");
   var lastFileName = "";
+  var lastResult = null;
+  var fontCache = null;
+
+  var EN_MONTHS = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
+
+  function parseReportDate(value) {
+    var s = String(value == null ? "" : value).trim();
+    if (!s) return null;
+    var m = /([A-Za-z]{3})[a-z]*\s+(\d{1,2}),?\s*(\d{4})/.exec(s);
+    if (m) {
+      var idx = EN_MONTHS.indexOf(m[1].toLowerCase());
+      if (idx !== -1) return new Date(Number(m[3]), idx, Number(m[2]));
+    }
+    m = /(\d{1,2})[.\/-](\d{1,2})[.\/-](\d{4})/.exec(s);
+    if (m) return new Date(Number(m[3]), Number(m[2]) - 1, Number(m[1]));
+    var d = new Date(s);
+    return isNaN(d.getTime()) ? null : d;
+  }
+
+  function toBase64(buffer) {
+    var bytes = new Uint8Array(buffer);
+    var binary = "";
+    var chunk = 0x8000;
+    for (var i = 0; i < bytes.length; i += chunk) {
+      binary += String.fromCharCode.apply(null, bytes.subarray(i, i + chunk));
+    }
+    return btoa(binary);
+  }
+
+  function loadFonts() {
+    if (fontCache) return Promise.resolve(fontCache);
+    return Promise.all([
+      fetch("assets/fonts/LiberationSans-Regular.ttf").then(function (r) {
+        if (!r.ok) throw new Error("Brak pliku czcionki regularnej.");
+        return r.arrayBuffer();
+      }),
+      fetch("assets/fonts/LiberationSans-Bold.ttf").then(function (r) {
+        if (!r.ok) throw new Error("Brak pliku czcionki pogrubionej.");
+        return r.arrayBuffer();
+      })
+    ]).then(function (buffers) {
+      fontCache = { regular: toBase64(buffers[0]), bold: toBase64(buffers[1]) };
+      return fontCache;
+    });
+  }
+
+  function downloadPdf(bytes, filename) {
+    var blob = new Blob([bytes], { type: "application/pdf" });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+  }
 
   function toNum(v) {
     var s = String(v == null ? "" : v).trim().replace(/\s/g, "").replace(",", ".");
@@ -451,11 +519,14 @@
 
   function render(rows, cols) {
     var total = 0, items = 0;
+    var latestDate = null;
     var rowsHtml = "";
     rows.forEach(function (r) {
       var amt = money(r[cols.total]);
       var qty = Math.round(toNum(r[cols.items]));
       total += amt; items += qty;
+      var rowDate = parseReportDate(r[cols.date]);
+      if (rowDate && (!latestDate || rowDate > latestDate)) latestDate = rowDate;
       rowsHtml += "<tr>"
         + "<td class='date'>" + fmtDate(r[cols.date]) + "</td>"
         + "<td class='id'>" + (r[cols.inv] || "—") + "</td>"
@@ -473,6 +544,13 @@
     var taxBase = Math.round(payout * 0.5 * 100) / 100;
     var taxAmount = Math.round(taxBase * 0.12 * 100) / 100;
     var taxNet = Math.round((payout - taxAmount) * 100) / 100;
+
+    lastResult = {
+      items: items,
+      payout: payout,
+      tax: taxAmount,
+      date: latestDate || new Date()
+    };
 
     $("tbody").innerHTML = rowsHtml;
     $("rowCount").textContent = rows.length;
@@ -553,6 +631,7 @@
     $("vTotal").textContent = $("vItems").textContent = $("vNet").textContent = $("vVat").textContent = $("vGross").textContent = "—";
     $("vTaxBase").textContent = $("vTax").textContent = $("vTaxNet").textContent = "—";
     $("vPayout").textContent = "0,00 zł";
+    lastResult = null;
   });
 
   var printBtn = $("printBtn");
@@ -563,6 +642,39 @@
       return;
     }
     window.print();
+  });
+
+  contractBtn.addEventListener("click", function () {
+    if (!lastResult) {
+      $("err").innerHTML = "<b>Brak raportu</b>Załaduj najpierw plik CSV, aby pobrać umowę.";
+      $("err").style.display = "block";
+      return;
+    }
+    if (!window.jspdf || !window.jspdf.jsPDF || !window.ContractPDF) {
+      $("err").innerHTML = "<b>Brak generatora PDF</b>Nie udało się wczytać biblioteki do tworzenia umowy.";
+      $("err").style.display = "block";
+      return;
+    }
+    var result = lastResult;
+    contractBtn.disabled = true;
+    contractBtn.textContent = "Generuję…";
+    loadFonts().then(function (fonts) {
+      var bytes = window.ContractPDF.create({
+        jsPDF: window.jspdf.jsPDF,
+        regular: fonts.regular,
+        bold: fonts.bold,
+        data: result
+      });
+      var d = result.date;
+      var name = "umowa-o-dzielo-" + d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + ".pdf";
+      downloadPdf(bytes, name);
+    }).catch(function (e) {
+      $("err").innerHTML = "<b>Nie udało się wygenerować umowy</b>" + (e && e.message ? e.message : e);
+      $("err").style.display = "block";
+    }).then(function () {
+      contractBtn.disabled = false;
+      contractBtn.textContent = "Pobierz umowę (PDF)";
+    });
   });
 
   copyBtn.addEventListener("click", function () {

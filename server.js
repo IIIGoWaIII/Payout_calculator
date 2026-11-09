@@ -11,6 +11,7 @@ const types = {
   ".csv": "text/csv; charset=utf-8",
   ".svg": "image/svg+xml",
   ".png": "image/png",
+  ".ttf": "font/ttf",
 };
 
 http
