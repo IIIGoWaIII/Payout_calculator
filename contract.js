@@ -196,7 +196,7 @@
 
     drawRuns([
       { text: "Rafałem Ziarnowskim", bold: true },
-      { text: ", zamieszkałym: 40-073 Katowice ul Strzelecka 4/14, adres korespondencyjny: 42-510 Wojkowice Kościelne, ul. Karsów 6, zwanym dalej ", bold: false },
+      { text: ", zamieszkałym: 42-510 Wojkowice Kościelne, ul. Karsów 6, zwanym dalej ", bold: false },
       { text: "Wykonawcą", bold: true },
       { text: ", ", bold: false }
     ], BODY, PARA, PARA);
@@ -212,7 +212,7 @@
     drawRuns([{ text: " Wykonanie " + items + " " + drawing + " ", bold: false }], BODY, PARA, PARA);
 
     drawRuns([
-      { text: "oddane do użytku Zamawiającego do dnia " + info.lastDay + " " + monthGen + " " + info.year + " roku.\n\n", bold: false }
+      { text: "oddane do użytku Zamawiającego do ostatniego dnia miesiąca, tj. do " + info.lastDay + " " + monthGen + " " + info.year + " roku.\n\n", bold: false }
     ], BODY, PARA, PARA);
 
     drawRuns([{ text: "§ 2. Wynagrodzenie ", bold: true }], HEAD, HEAD_TOP, HEAD_BOTTOM);
